@@ -88,7 +88,41 @@ class GrafoConocimiento:
         })
         return arista_id
 
+    def obtener_nodo_por_etiqueta(self, tipo: str, etiqueta: str) -> dict[str, Any] | None:
+        with self._get_conn() as conn:
+            row = conn.execute(
+                "SELECT * FROM nodos WHERE tipo = ? AND etiqueta = ? LIMIT 1",
+                (tipo, etiqueta),
+            ).fetchone()
+            if not row:
+                return None
+            d = dict(row)
+            d["metadata"] = json.loads(d["metadata"]) if d["metadata"] else {}
+            return d
+
+    def obtener_o_crear_nodo(self, tipo: str, subtipo: str, etiqueta: str, metadata: dict[str, Any] | None = None) -> str:
+        existente = self.obtener_nodo_por_etiqueta(tipo, etiqueta)
+        if existente:
+            return existente["id"]
+        return self.crear_nodo(tipo, subtipo, etiqueta, metadata)
+
+    def obtener_arista(self, origen_id: str, destino_id: str, tipo: str) -> dict[str, Any] | None:
+        with self._get_conn() as conn:
+            row = conn.execute(
+                "SELECT * FROM aristas WHERE origen_id = ? AND destino_id = ? AND tipo = ? LIMIT 1",
+                (origen_id, destino_id, tipo),
+            ).fetchone()
+            return dict(row) if row else None
+
+    def reforzar_o_crear_arista(self, origen_id: str, destino_id: str, tipo: str, incremento: float = 0.1) -> str:
+        existente = self.obtener_arista(origen_id, destino_id, tipo)
+        if existente:
+            self.reforzar_arista(existente["id"], incremento)
+            return existente["id"]
+        return self.crear_arista(origen_id, destino_id, tipo, peso=1.0)
+
     def nodos_por_tipo(self, tipo: str) -> list[dict[str, Any]]:
+
         with self._get_conn() as conn:
             rows = conn.execute("SELECT * FROM nodos WHERE tipo = ?", (tipo,)).fetchall()
             res = []

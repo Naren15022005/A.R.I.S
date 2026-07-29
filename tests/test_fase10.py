@@ -172,3 +172,49 @@ def test_endpoint_metricas_aprendizaje():
     assert "total_aristas" in data
     assert "peso_promedio" in data
 
+
+def test_obtener_o_crear_nodo_y_reforzar_o_crear_arista(tmp_db):
+    g = GrafoConocimiento(tmp_db)
+    nid1 = g.obtener_o_crear_nodo("memoria", "entrada", "hola")
+    nid2 = g.obtener_o_crear_nodo("memoria", "entrada", "hola")
+    assert nid1 == nid2
+
+    r_id1 = g.obtener_o_crear_nodo("simbolico", "regla", "saludo")
+    aid1 = g.reforzar_o_crear_arista(nid1, r_id1, tipo="inferida", incremento=0.15)
+    aid2 = g.reforzar_o_crear_arista(nid1, r_id1, tipo="inferida", incremento=0.15)
+    assert aid1 == aid2
+
+    vecinos = g.vecinos(nid1)
+    assert len(vecinos) == 1
+    assert vecinos[0]["peso"] == 1.15
+
+
+def test_loopy_integra_grafo(tmp_db):
+    from aris.loopy import Loopy
+    from aris.reglas_arranque import REGLAS_INICIALES
+    loopy = Loopy(tmp_db)
+    loopy.iniciar()
+
+    for cond, acc, prio, desc in REGLAS_INICIALES:
+        loopy.base_reglas.agregar(
+            condicion=cond,
+            accion=acc,
+            prioridad=prio,
+            descripcion=desc,
+        )
+
+
+    # Procesar comando 2 veces para verificar refuerzo hebbiano en la arista
+    loopy.procesar("hola")
+    loopy.procesar("hola")
+
+    nodos = loopy.grafo.nodos_por_tipo("memoria")
+    assert len(nodos) >= 1
+
+    metricas = loopy.grafo.obtener_metricas_aprendizaje()
+    assert metricas["total_nodos"] >= 2
+    assert metricas["total_aristas"] >= 1
+    assert metricas["peso_promedio"] >= 1.0
+
+
+
