@@ -2,11 +2,14 @@ import argparse
 import logging
 import sys
 
+from typing import Any
+
 from aris.config import DB_PATH, init_paths
 try:
     from aris.loopy import Loopy
 except ImportError:
-    Loopy = None  # type: ignore
+    Loopy = Any  # type: ignore
+
 
 from aris.reglas_arranque import REGLAS_INICIALES
 

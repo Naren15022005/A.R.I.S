@@ -1,4 +1,5 @@
 from pathlib import Path
+from typing import Any
 
 from fastapi import FastAPI, HTTPException
 from fastapi.responses import HTMLResponse
@@ -9,8 +10,9 @@ from aris.config import DATA_DIR, DB_PATH, init_paths
 try:
     from aris.loopy import Loopy
 except ImportError:
-    Loopy = None  # type: ignore
+    Loopy = Any  # type: ignore
 from aris.reglas_arranque import REGLAS_INICIALES
+
 
 
 
@@ -66,8 +68,9 @@ def _init() -> None:
     global _loopy
     if _loopy is not None:
         return
-    if Loopy is None:
+    if Loopy is Any:
         raise RuntimeError("El módulo núcleo de ARIS (loopy.py) no está disponible.")
+
     init_paths()
     loopy = Loopy(DB_PATH)
     loopy.base_reglas.cargar_reglas_iniciales(REGLAS_INICIALES)
