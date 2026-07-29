@@ -133,3 +133,42 @@ def test_quantum_tool():
     res_exceso = QuantumTool.optimizar("gran_problema", n_variables=32)
     assert not res_exceso.success
     assert "excedido" in res_exceso.error.lower()
+
+
+# ─── 10.6 Refuerzo Hebbiano y Métricas ────────────────────────────────────────
+
+
+def test_refuerzo_hebbiano_y_decaimiento(tmp_db):
+    g = GrafoConocimiento(tmp_db)
+    n1 = g.crear_nodo("simbolico", "regla", "Regla A")
+    n2 = g.crear_nodo("memoria", "hecho", "Hecho A")
+    aid = g.crear_arista(n1, n2, "inferida", peso=1.0)
+
+    nuevo_peso = g.reforzar_arista(aid, incremento=0.5)
+    assert nuevo_peso == 1.5
+
+    # Decaimiento
+    g.decaer_pesos(factor=0.5, umbral_minimo=0.1)
+    vecinos = g.vecinos(n1)
+    assert len(vecinos) == 1
+    assert vecinos[0]["peso"] == 0.75
+
+    # Decaimiento sub-umbral (eliminación de arista inactiva)
+    g.decaer_pesos(factor=0.01, umbral_minimo=0.1)
+    vecinos_post = g.vecinos(n1)
+    assert len(vecinos_post) == 0
+
+    metricas = g.obtener_metricas_aprendizaje()
+    assert metricas["total_nodos"] == 2
+    assert metricas["total_aristas"] == 0
+
+
+def test_endpoint_metricas_aprendizaje():
+    client = TestClient(app)
+    r = client.get("/metricas/aprendizaje")
+    assert r.status_code == 200
+    data = r.json()
+    assert "total_nodos" in data
+    assert "total_aristas" in data
+    assert "peso_promedio" in data
+

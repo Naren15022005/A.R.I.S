@@ -133,3 +133,58 @@ class GrafoConocimiento:
 
             aristas = [dict(r) for r in a_rows]
             return {"nodos": nodos, "aristas": aristas}
+
+    def reforzar_arista(self, arista_id: str, incremento: float = 0.1) -> float:
+        """Incrementa el peso de una arista cuando es activada por inferencia (Refuerzo Hebbiano)."""
+        with self._get_conn() as conn:
+            row = conn.execute("SELECT peso FROM aristas WHERE id = ?", (arista_id,)).fetchone()
+            if not row:
+                return 0.0
+            nuevo_peso = min(10.0, round(row["peso"] + incremento, 4))
+            conn.execute("UPDATE aristas SET peso = ? WHERE id = ?", (nuevo_peso, arista_id))
+
+        bus_eventos.publicar({
+            "accion": "arista_reforzada",
+            "data": {"id": arista_id, "nuevo_peso": nuevo_peso}
+        })
+        return nuevo_peso
+
+    def decaer_pesos(self, factor: float = 0.98, umbral_minimo: float = 0.05) -> int:
+        """Aplica decaimiento gradual a los pesos de aristas y elimina las inactivas sub-umbral."""
+        with self._get_conn() as conn:
+            conn.execute("UPDATE aristas SET peso = ROUND(peso * ?, 4) WHERE tipo != 'manual'", (factor,))
+            cursor = conn.execute("DELETE FROM aristas WHERE peso < ? AND tipo != 'manual'", (umbral_minimo,))
+            eliminadas = cursor.rowcount
+
+        bus_eventos.publicar({
+            "accion": "decaimiento_pesos",
+            "data": {"factor": factor, "eliminadas": eliminadas}
+        })
+        return eliminadas
+
+    def obtener_metricas_aprendizaje(self) -> dict[str, Any]:
+        """Calcula métricas cuantitativas del estado y evolución del grafo (Fase 10.6)."""
+        with self._get_conn() as conn:
+            total_nodos = conn.execute("SELECT COUNT(*) as count FROM nodos").fetchone()["count"]
+            total_aristas = conn.execute("SELECT COUNT(*) as count FROM aristas").fetchone()["count"]
+            avg_peso_row = conn.execute("SELECT AVG(peso) as avg_peso FROM aristas").fetchone()
+            avg_peso = round(avg_peso_row["avg_peso"] or 0.0, 4)
+
+            nodos_tipo_rows = conn.execute("SELECT tipo, COUNT(*) as count FROM nodos GROUP BY tipo").fetchall()
+            nodos_por_tipo = {r["tipo"]: r["count"] for r in nodos_tipo_rows}
+
+            aristas_tipo_rows = conn.execute("SELECT tipo, COUNT(*) as count FROM aristas GROUP BY tipo").fetchall()
+            aristas_por_tipo = {r["tipo"]: r["count"] for r in aristas_tipo_rows}
+
+            inducidas_row = conn.execute("SELECT COUNT(*) as count FROM nodos WHERE tipo = 'simbolico' AND subtipo = 'regla' AND metadata LIKE '%inducida%'").fetchone()
+            reglas_inducidas = inducidas_row["count"] if inducidas_row else 0
+
+            return {
+                "total_nodos": total_nodos,
+                "nodos_por_tipo": nodos_por_tipo,
+                "total_aristas": total_aristas,
+                "aristas_por_tipo": aristas_por_tipo,
+                "peso_promedio": avg_peso,
+                "reglas_inducidas": reglas_inducidas,
+            }
+

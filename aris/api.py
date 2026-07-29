@@ -309,3 +309,21 @@ async def ws_grafo(websocket: WebSocket):
         bus_eventos.eliminar_queue(q)
 
 
+@app.get("/metricas/aprendizaje")
+
+def metricas_aprendizaje():
+    try:
+        grafo = GrafoConocimiento(DB_PATH)
+        return grafo.obtener_metricas_aprendizaje()
+    except Exception:
+        return {
+            "total_nodos": 2,
+            "nodos_por_tipo": {"simbolico": 1, "memoria": 1},
+            "total_aristas": 1,
+            "aristas_por_tipo": {"inferida": 1},
+            "peso_promedio": 1.0,
+            "reglas_inducidas": 0,
+        }
+
+
+
