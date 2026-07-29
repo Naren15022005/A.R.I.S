@@ -7,13 +7,14 @@ from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
 from aris.config import DATA_DIR, DB_PATH, init_paths
+from aris.percepcion import CapaPercepcion
 try:
     from aris.loopy import Loopy
 except ImportError:
     Loopy = Any  # type: ignore
 from aris.reglas_arranque import REGLAS_INICIALES
 
-
+percepcion = CapaPercepcion()
 
 
 class ChatRequest(BaseModel):
@@ -83,8 +84,8 @@ STATIC_DIR = Path(__file__).resolve().parent.parent / "static"
 
 app = FastAPI(
     title="ARIS API",
-    version="0.4.0",
-    description="Artificial Reasoning Intelligent System — Núcleo Simbólico",
+    version="0.6.0",
+    description="Artificial Reasoning Intelligent System — Cerebro Simbólico",
 )
 
 
@@ -104,13 +105,14 @@ def _get_loopy() -> Loopy:
 
 @app.get("/health")
 def health():
-    return {"status": "ok", "nombre": "ARIS", "version": "0.4.0"}
+    return {"status": "ok", "nombre": "ARIS", "version": "0.6.0"}
 
 
 @app.post("/chat", response_model=ChatResponse)
 def chat(req: ChatRequest):
     loopy = _get_loopy()
-    resultado = loopy.procesar(req.mensaje)
+    comando_norm = percepcion.normalizar_comando(req.mensaje)
+    resultado = loopy.procesar(comando_norm)
     return ChatResponse(
         respuesta=resultado["respuesta"],
         regla=resultado["regla"],
@@ -188,3 +190,89 @@ def estado_sesion():
         "casos": loopy.memoria_casos.contar(),
         "perfil": loopy.perfil.get("nombre", "defecto"),
     }
+
+
+@app.get("/galaxia")
+def galaxia():
+    nodes = []
+    links = []
+
+    loopy = None
+    if Loopy is not Any and _loopy is not None:
+        loopy = _loopy
+    else:
+        try:
+            loopy = _get_loopy()
+        except Exception:
+            loopy = None
+
+    if loopy is not None:
+        # 1. Nodos Morados (Reglas de inferencia)
+        for r in loopy.base_reglas.listar():
+            rid = f"regla_{r['id']}"
+            nodes.append({
+                "id": rid,
+                "label": r.get("descripcion") or f"Regla #{r['id']}",
+                "tipo": "regla",
+                "grupo": "morado",
+                "detalles": f"Condición: {r['condicion']} → Acción: {r['accion']}",
+            })
+
+        # 2. Nodos Teal (Hechos de la Base de Conocimiento)
+        hechos = loopy.conocimiento.listar(limite=50)
+        for h in hechos:
+            hid = f"hecho_{h['id']}"
+            nodes.append({
+                "id": hid,
+                "label": f"{h['sujeto']} {h['predicado']} {h['objeto']}",
+                "tipo": "hecho",
+                "grupo": "teal",
+                "detalles": f"Sujeto: {h['sujeto']} | Predicado: {h['predicado']} | Objeto: {h['objeto']}",
+            })
+
+        # 3. Nodos Dorado (Casos en memoria)
+        if hasattr(loopy, "memoria_casos"):
+            casos = loopy.memoria_casos.buscar_similares("", limite=20)
+            for c in casos:
+                cid = f"caso_{c['id']}"
+                nodes.append({
+                    "id": cid,
+                    "label": f"Caso #{c['id']}: {c['input_text']}",
+                    "tipo": "caso",
+                    "grupo": "dorado",
+                    "detalles": f"Acción: {c['accion_ejecutada']}",
+                })
+
+        # 4. Nodos Esmeralda (Habilidades sintetizadas)
+        if hasattr(loopy, "registro_habilidades"):
+            habs = loopy.registro_habilidades.listar()
+            for hb in habs:
+                hbid = f"habilidad_{hb['id']}"
+                nodes.append({
+                    "id": hbid,
+                    "label": f"Habilidad: {hb['accion']}",
+                    "tipo": "habilidad",
+                    "grupo": "esmeralda",
+                    "detalles": hb.get("descripcion", ""),
+                })
+
+        # Aristas: Relacionar reglas con hechos coincidentes
+        for r_node in [n for n in nodes if n["tipo"] == "regla"]:
+            for h_node in [n for n in nodes if n["tipo"] == "hecho"]:
+                suj = h_node["label"].split()[0].lower()
+                if suj and len(suj) > 2 and suj in r_node["detalles"].lower():
+                    links.append({
+                        "source": r_node["id"],
+                        "target": h_node["id"],
+                        "rel": "relacionado",
+                    })
+
+    if not nodes:
+        nodes = [
+            {"id": "regla_1", "label": "Regla Inicial: Saludar", "tipo": "regla", "grupo": "morado"},
+            {"id": "hecho_1", "label": "ARIS es Cerebro Simbólico", "tipo": "hecho", "grupo": "teal"},
+        ]
+        links = [{"source": "regla_1", "target": "hecho_1", "rel": "relacionado"}]
+
+    return {"nodes": nodes, "links": links}
+
