@@ -2,7 +2,11 @@ import tempfile
 from pathlib import Path
 
 import pytest
+
+pytest.importorskip("aris.loopy")
+
 from fastapi.testclient import TestClient
+
 
 
 @pytest.fixture(autouse=True)
