@@ -1,7 +1,5 @@
-# Núcleo: puro stdlib (sin dependencias externas)
-#
-# Capa API (opcional):
-#   pip install fastapi uvicorn
-#
-# Desarrollo:
-#   pip install pytest
+fastapi>=0.95.0
+uvicorn>=0.22.0
+requests>=2.31.0
+httpx>=0.24.0
+pytest>=7.0.0

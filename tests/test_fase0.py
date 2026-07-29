@@ -4,6 +4,10 @@ from uuid import uuid4
 
 import pytest
 
+pytest.importorskip("aris.conocimiento")
+pytest.importorskip("aris.reglas")
+pytest.importorskip("aris.loopy")
+
 from aris.conocimiento import BaseConocimiento
 from aris.memoria import MemoriaTrabajo
 from aris.reglas import BaseReglas, EvaluadorCondicion, MotorInferencia
@@ -12,10 +16,12 @@ from aris.loopy import Loopy
 from aris.reglas_arranque import REGLAS_INICIALES
 
 
+
 @pytest.fixture
 def db_path():
-    with tempfile.TemporaryDirectory() as tmp:
+    with tempfile.TemporaryDirectory(ignore_cleanup_errors=True) as tmp:
         yield Path(tmp) / "test_aris.db"
+
 
 
 # ─── BaseConocimiento ────────────────────────────────────────────────────────

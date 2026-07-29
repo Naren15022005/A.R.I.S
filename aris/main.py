@@ -3,7 +3,11 @@ import logging
 import sys
 
 from aris.config import DB_PATH, init_paths
-from aris.loopy import Loopy
+try:
+    from aris.loopy import Loopy
+except ImportError:
+    Loopy = None  # type: ignore
+
 from aris.reglas_arranque import REGLAS_INICIALES
 
 

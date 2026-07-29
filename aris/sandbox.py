@@ -78,10 +78,14 @@ class SandboxComando:
         if not cls.permitido(comando):
             raise PermisoError(f"Comando no permitido: {comando}")
         try:
+            import os
+            use_shell = os.name == "nt"
+            cmd_arg = comando if use_shell else comando.split()
             resultado = subprocess.run(
-                comando.split(), shell=False, capture_output=True, text=True,
+                cmd_arg, shell=use_shell, capture_output=True, text=True,
                 timeout=TIMEOUT_COMANDO,
             )
+
             salida = resultado.stdout or ""
             if resultado.stderr:
                 salida += f"\n(stderr) {resultado.stderr.strip()}"

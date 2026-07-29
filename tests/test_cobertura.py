@@ -5,6 +5,14 @@ from pathlib import Path
 from unittest.mock import patch
 
 import pytest
+
+pytest.importorskip("aris.conocimiento")
+pytest.importorskip("aris.reglas")
+pytest.importorskip("aris.casos")
+pytest.importorskip("aris.induccion")
+pytest.importorskip("aris.perfil")
+pytest.importorskip("aris.loopy")
+
 from fastapi.testclient import TestClient
 
 from aris.conocimiento import BaseConocimiento
@@ -18,6 +26,7 @@ from aris.tools import WebTool
 from aris.acciones import ACCIONES_NO_REUTILIZABLES, GestorAcciones
 from aris.loopy import Loopy
 from aris.reglas_arranque import REGLAS_INICIALES
+
 
 
 @pytest.fixture

@@ -3,6 +3,11 @@ from pathlib import Path
 
 import pytest
 
+pytest.importorskip("aris.habilidades")
+pytest.importorskip("aris.conocimiento")
+pytest.importorskip("aris.reglas")
+pytest.importorskip("aris.loopy")
+
 from aris.habilidades import GeneradorHabilidades, RegistroHabilidades, Habilidad
 from aris.acciones import GestorAcciones
 from aris.conocimiento import BaseConocimiento
@@ -11,6 +16,7 @@ from aris.reglas import BaseReglas
 from aris.reglas_arranque import REGLAS_INICIALES
 from aris.loopy import Loopy
 from aris.config import DATA_DIR
+
 
 
 @pytest.fixture(autouse=True)

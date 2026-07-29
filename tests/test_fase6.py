@@ -3,6 +3,10 @@ from pathlib import Path
 
 import pytest
 
+pytest.importorskip("aris.conocimiento")
+pytest.importorskip("aris.reglas")
+pytest.importorskip("aris.loopy")
+
 from aris.sandbox import SandboxRuta, SandboxComando, PermisoError
 from aris.tools import FileSystemTool, TerminalTool, ToolResult
 from aris.acciones import GestorAcciones
@@ -11,6 +15,7 @@ from aris.memoria import MemoriaTrabajo
 from aris.reglas import BaseReglas
 from aris.reglas_arranque import REGLAS_INICIALES
 from aris.loopy import Loopy
+
 
 
 @pytest.fixture(autouse=True)

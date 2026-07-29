@@ -6,8 +6,12 @@ from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
 from aris.config import DATA_DIR, DB_PATH, init_paths
-from aris.loopy import Loopy
+try:
+    from aris.loopy import Loopy
+except ImportError:
+    Loopy = None  # type: ignore
 from aris.reglas_arranque import REGLAS_INICIALES
+
 
 
 class ChatRequest(BaseModel):
@@ -62,11 +66,14 @@ def _init() -> None:
     global _loopy
     if _loopy is not None:
         return
+    if Loopy is None:
+        raise RuntimeError("El módulo núcleo de ARIS (loopy.py) no está disponible.")
     init_paths()
     loopy = Loopy(DB_PATH)
     loopy.base_reglas.cargar_reglas_iniciales(REGLAS_INICIALES)
     loopy.iniciar()
     _loopy = loopy
+
 
 
 STATIC_DIR = Path(__file__).resolve().parent.parent / "static"
