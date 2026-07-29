@@ -8,9 +8,10 @@ class CanalPercepcion(ABC):
     nombre: str = "base"
 
     @abstractmethod
-    def disponible(self) -> bool:
+    def disponible(self, timeout: float = 1.0) -> bool:
         """Indica si el canal/sensor está activo y disponible."""
         pass
+
 
     @abstractmethod
     def interpretar(self, entrada: Any) -> dict[str, Any]:

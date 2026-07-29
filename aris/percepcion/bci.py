@@ -11,7 +11,8 @@ class CanalBCI(CanalPercepcion):
     def __init__(self, hardware_sdk: Any | None = None) -> None:
         self.sdk = hardware_sdk
 
-    def disponible(self) -> bool:
+    def disponible(self, timeout: float = 1.0) -> bool:
+
         # Si hay SDK real inicializado o mock activo
         if self.sdk is not None:
             try:

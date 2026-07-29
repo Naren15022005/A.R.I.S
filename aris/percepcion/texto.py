@@ -18,13 +18,18 @@ class CanalTextoSLM(CanalPercepcion):
         self.ollama_url = ollama_url
         self.model = model
 
-    def disponible(self, timeout: float = 1.0) -> bool:
+    def slm_disponible(self, timeout: float = 1.0) -> bool:
         try:
             req = urllib.request.Request("http://localhost:11434/api/tags", method="GET")
             with urllib.request.urlopen(req, timeout=timeout) as response:
                 return response.status == 200
         except Exception:
             return False
+
+    def disponible(self, timeout: float = 1.0) -> bool:
+        return True
+
+
 
     def _via_slm(self, texto: str) -> dict[str, Any]:
         prompt = (
@@ -139,6 +144,7 @@ class CanalTextoSLM(CanalPercepcion):
 
     def interpretar(self, entrada: Any) -> dict[str, Any]:
         texto = str(entrada)
-        if self.disponible():
+        if self.slm_disponible():
             return self._via_slm(texto)
         return self._via_patrones(texto)
+

@@ -29,13 +29,22 @@ class RegistroPercepcion:
             if target and target.disponible():
                 return target.interpretar(entrada)
         
-        # Buscar el primer canal disponible que acepte la entrada
+        # Selección inteligente por tipo de entrada cuando no se especifica canal
+        if isinstance(entrada, (int, float)):
+            bci = self.obtener_canal("bci_neurosity")
+            if bci and bci.disponible():
+                return bci.interpretar(entrada)
+
+        txt = self.obtener_canal("texto_libre")
+        if txt and txt.disponible():
+            return txt.interpretar(entrada)
+
         for c in self.canales:
             if c.disponible():
                 return c.interpretar(entrada)
         
-        # Fallback por defecto si ningún canal responde
         return CanalTextoSLM().interpretar(str(entrada))
+
 
 
 class CapaPercepcion(CanalTextoSLM):
