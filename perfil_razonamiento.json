@@ -1,0 +1,10 @@
+{
+  "nombre": "defecto",
+  "priorizar_palabras": [],
+  "evitar_palabras": [],
+  "penalizar_si_contiene": [],
+  "bonificar_si_contiene": [],
+  "max_candidatas": 10,
+  "umbral_confianza_minimo": 0,
+  "tono": "natural"
+}

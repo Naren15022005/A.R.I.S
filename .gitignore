@@ -1,0 +1,43 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.so
+*.egg*
+*.egg-info/
+build/
+dist/
+.venv/
+venv/
+.env
+.env.*
+*.log
+
+# IDE/OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# Bytecode cache
+**/__pycache__/
+
+# Data (BD SQLite + workspace herramientas + habilidades)
+data/
+
+# Tests
+.pytest_cache/
+
+# Core Privado / IP Privada
+aris/conocimiento.py
+aris/reglas.py
+aris/induccion.py
+aris/casos.py
+aris/perfil.py
+aris/loopy.py
+aris/habilidades.py
+
+# Archivos y carpetas de contexto interno
+contexto.md
+archivo/

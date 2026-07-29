@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ARIS Chat</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: system-ui, -apple-system, sans-serif;
+    background: #111;
+    color: #e0e0e0;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+  }
+  header {
+    padding: 12px 20px;
+    background: #1a1a2e;
+    border-bottom: 1px solid #333;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  header h1 { font-size: 18px; font-weight: 600; }
+  header span { font-size: 12px; color: #888; }
+  #chat {
+    flex: 1;
+    overflow-y: auto;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+  .msg {
+    max-width: 80%;
+    padding: 10px 14px;
+    border-radius: 12px;
+    line-height: 1.5;
+    white-space: pre-wrap;
+    word-break: break-word;
+  }
+  .msg.user {
+    align-self: flex-end;
+    background: #2a4a7f;
+    border-bottom-right-radius: 4px;
+  }
+  .msg.aris {
+    align-self: flex-start;
+    background: #222;
+    border-bottom-left-radius: 4px;
+  }
+  .msg.aris .meta {
+    font-size: 11px;
+    color: #666;
+    margin-top: 4px;
+  }
+  .msg.aris .meta .tag {
+    display: inline-block;
+    padding: 1px 6px;
+    border-radius: 4px;
+    font-size: 10px;
+    margin-right: 4px;
+  }
+  .msg.aris .meta .tag.regla { background: #2a5; color: #fff; }
+  .msg.aris .meta .tag.caso  { background: #a52; color: #fff; }
+  .msg.aris .meta .tag.ninguna { background: #555; color: #fff; }
+  #bar {
+    padding: 12px 20px;
+    background: #1a1a2e;
+    border-top: 1px solid #333;
+    display: flex;
+    gap: 10px;
+  }
+  #bar input {
+    flex: 1;
+    padding: 10px 14px;
+    border-radius: 8px;
+    border: 1px solid #444;
+    background: #222;
+    color: #e0e0e0;
+    font-size: 14px;
+    outline: none;
+  }
+  #bar input:focus { border-color: #2a4a7f; }
+  #bar button {
+    padding: 10px 20px;
+    border-radius: 8px;
+    border: none;
+    background: #2a4a7f;
+    color: #fff;
+    font-size: 14px;
+    cursor: pointer;
+  }
+  #bar button:hover { background: #3a5a9f; }
+  #bar button:disabled { opacity: .5; cursor: default; }
+</style>
+</head>
+<body>
+<header>
+  <h1>ARIS</h1>
+  <span>v0.6.0 — cerebro simbólico</span>
+</header>
+<div id="chat">
+  <div class="msg aris">
+    Hola, soy ARIS. Puedes hablarme con lenguaje natural.
+    <div class="meta">escribe 'ayuda' para ver comandos</div>
+  </div>
+</div>
+<div id="bar">
+  <input id="input" type="text" placeholder="Escribe un mensaje..." autofocus>
+  <button id="send">Enviar</button>
+</div>
+<script>
+const chat = document.getElementById('chat');
+const input = document.getElementById('input');
+const sendBtn = document.getElementById('send');
+
+function addMsg(texto, tipo, meta) {
+  const div = document.createElement('div');
+  div.className = `msg ${tipo}`;
+  div.textContent = texto;
+  if (meta) {
+    const m = document.createElement('div');
+    m.className = 'meta';
+    if (meta.regla) {
+      const t = document.createElement('span');
+      t.className = 'tag regla';
+      t.textContent = meta.regla;
+      m.appendChild(t);
+    } else if (meta.desde_caso) {
+      const t = document.createElement('span');
+      t.className = 'tag caso';
+      t.textContent = 'caso';
+      m.appendChild(t);
+    }
+    div.appendChild(m);
+  }
+  chat.appendChild(div);
+  chat.scrollTop = chat.scrollHeight;
+}
+
+function setLoading(on) {
+  input.disabled = on;
+  sendBtn.disabled = on;
+  sendBtn.textContent = on ? '...' : 'Enviar';
+  if (!on) input.focus();
+}
+
+async function enviar() {
+  const texto = input.value.trim();
+  if (!texto) return;
+  addMsg(texto, 'user');
+  input.value = '';
+  setLoading(true);
+  try {
+    const r = await fetch('/chat', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ mensaje: texto }),
+    });
+    const d = await r.json();
+    addMsg(d.respuesta || '(sin respuesta)', 'aris', {
+      regla: d.regla,
+      desde_caso: d.desde_caso,
+    });
+  } catch (e) {
+    addMsg('Error de conexión: ' + e.message, 'aris', { regla: null });
+    // Intentar HTTP directo si sirve por separado
+    try {
+      const r = await fetch('http://localhost:8000/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ mensaje: texto }),
+      });
+      const d = await r.json();
+      addMsg(d.respuesta || '(sin respuesta)', 'aris', {
+        regla: d.regla,
+        desde_caso: d.desde_caso,
+      });
+    } catch (e2) {
+      addMsg('ARIS no está disponible. Ejecuta: python3 -m aris.main --serve', 'aris');
+    }
+  }
+  setLoading(false);
+}
+
+input.addEventListener('keydown', e => { if (e.key === 'Enter') enviar(); });
+sendBtn.addEventListener('click', enviar);
+</script>
+</body>
+</html>

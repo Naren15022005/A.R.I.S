@@ -1,0 +1,7 @@
+# Núcleo: puro stdlib (sin dependencias externas)
+#
+# Capa API (opcional):
+#   pip install fastapi uvicorn
+#
+# Desarrollo:
+#   pip install pytest

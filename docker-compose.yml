@@ -1,0 +1,9 @@
+services:
+  aris:
+    build: .
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./data:/app/data
+    environment:
+      - ARIS_DB_PATH=/app/data/aris.db
