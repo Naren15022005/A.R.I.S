@@ -8,8 +8,9 @@ from aris.percepcion import CapaPercepcion
 def test_percepcion_slm_disponible_retorna_bool():
     cp = CapaPercepcion()
     # Verifica que la comprobación no falle y retorne un booleano
-    res = cp.slm_disponible(timeout=0.1)
+    res = cp.disponible(timeout=0.1)
     assert isinstance(res, bool)
+
 
 
 def test_percepcion_fallback_patrones():

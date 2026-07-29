@@ -331,16 +331,58 @@ const COLORS = {
   esmeralda: '#10b981'
 };
 
+let ws = null;
+
 async function cargarGalaxia() {
   resizeCanvas();
   try {
     const res = await fetch('/galaxia');
     const data = await res.json();
-    initSimulacion(data.nodes, data.links);
+    initSimulacion(data.nodes || [], data.links || []);
+    conectarWebSocket();
   } catch (e) {
     console.error('Error al cargar galaxia:', e);
   }
 }
+
+function conectarWebSocket() {
+  if (ws && (ws.readyState === WebSocket.OPEN || ws.readyState === WebSocket.CONNECTING)) return;
+  const protocol = location.protocol === 'https:' ? 'wss:' : 'ws:';
+  const wsUrl = `${protocol}//${location.host}/ws/grafo`;
+  ws = new WebSocket(wsUrl);
+
+  ws.onmessage = (event) => {
+    try {
+      const msg = JSON.parse(event.data);
+      if (msg.accion === 'init') {
+        initSimulacion(msg.data.nodes || [], msg.data.links || []);
+      } else if (msg.accion === 'nuevo_nodo') {
+        const n = msg.data;
+        const cx = canvas.width / 2;
+        const cy = canvas.height / 2;
+        const nuevo = {
+          ...n,
+          x: cx + (Math.random() - 0.5) * 50,
+          y: cy + (Math.random() - 0.5) * 50,
+          vx: (Math.random() - 0.5) * 2,
+          vy: (Math.random() - 0.5) * 2,
+          r: n.tipo === 'regla' ? 9 : 7
+        };
+        nodes.push(nuevo);
+      } else if (msg.accion === 'nueva_arista') {
+        const a = msg.data;
+        const src = nodes.find(n => n.id === a.origen_id);
+        const tgt = nodes.find(n => n.id === a.destino_id);
+        if (src && tgt) {
+          links.push({ source: src, target: tgt });
+        }
+      }
+    } catch (err) {
+      console.error('Error procesando mensaje WebSocket:', err);
+    }
+  };
+}
+
 
 function initSimulacion(rawNodes, rawLinks) {
   const width = canvas.width;

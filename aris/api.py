@@ -1,13 +1,17 @@
+import asyncio
 from pathlib import Path
 from typing import Any
 
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, WebSocket, WebSocketDisconnect
 from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
 from aris.config import DATA_DIR, DB_PATH, init_paths
+from aris.eventos import bus_eventos
+from aris.grafo import GrafoConocimiento
 from aris.percepcion import CapaPercepcion
+
 try:
     from aris.loopy import Loopy
 except ImportError:
@@ -275,4 +279,33 @@ def galaxia():
         links = [{"source": "regla_1", "target": "hecho_1", "rel": "relacionado"}]
 
     return {"nodes": nodes, "links": links}
+
+
+@app.get("/grafo")
+def obtener_grafo():
+    try:
+        grafo = GrafoConocimiento(DB_PATH)
+        data = grafo.exportar_json()
+        if data["nodos"]:
+            return data
+    except Exception:
+        pass
+    return galaxia()
+
+
+@app.websocket("/ws/grafo")
+async def ws_grafo(websocket: WebSocket):
+    await websocket.accept()
+    q = bus_eventos.crear_queue()
+    try:
+        # Enviar estado inicial
+        await websocket.send_json({"accion": "init", "data": galaxia()})
+        while True:
+            evento = await q.get()
+            await websocket.send_json(evento)
+    except (WebSocketDisconnect, Exception):
+        pass
+    finally:
+        bus_eventos.eliminar_queue(q)
+
 

@@ -37,7 +37,9 @@ crea una herramienta que <descripción> / aprueba <acción> / habilidades
 | 7 | ✅ Generador de habilidades | +22 |
 | 8 | 🔲 Voz | — |
 | 9 | ✅ Calidad y consolidación | +60 |
-| **Total** | | **177 tests** |
+| 10 | ✅ Cerebro Vivo (Red Neuro-Simbólica) | +47 |
+| **Total** | | **224 tests** |
+
 
 ## Documentación
 
